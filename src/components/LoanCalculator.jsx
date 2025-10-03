@@ -300,7 +300,7 @@ export default function AvalancheLoanCalculator() {
   const latestMonth = schedule && schedule.length ? schedule[schedule.length - 1].month : null;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="max-w-7xl mx-auto px-1 sm:px-4 md:px-6 py-3 sm:py-6">
       <header className="mb-6 border-b pb-4">
         <h1 className="text-4xl sm:text-3xl font-bold tracking-tight text-gray-800">Loan Prepayment</h1>
         <p className="mt-1 text-md text-gray-500">Plan your debt-free journey with loan payoff calculations and one-time lumpsum payments.</p>
@@ -368,13 +368,16 @@ export default function AvalancheLoanCalculator() {
             </div>
 
             <div className="sm:col-span-2 mt-2">
-              <h3 className="text-sm font-medium mb-2">Schedule one-time lumpsum payment (calendar month)</h3>
-              <div className="flex gap-2 items-center">
+              <h3 className="text-sm font-medium mb-2">
+                Schedule one-time lumpsum payment (calendar month)
+              </h3>
+
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                 <input
                   type="month"
                   value={lumpMonthLabel}
                   onChange={(e) => setLumpMonthLabel(e.target.value)}
-                  className="w-36 p-2 border rounded text-sm"
+                  className="w-full sm:w-36 p-2 border rounded text-sm"
                 />
                 <input
                   placeholder="Amount"
@@ -383,15 +386,18 @@ export default function AvalancheLoanCalculator() {
                   step="1"
                   value={lumpAmount}
                   onChange={(e) => setLumpAmount(e.target.value)}
-                  className="w-36 p-2 border rounded text-sm"
+                  className="w-full sm:w-36 p-2 border rounded text-sm"
                 />
                 <input
                   placeholder="Note (optional)"
                   value={lumpNote}
                   onChange={(e) => setLumpNote(e.target.value)}
-                  className="flex-1 p-2 border rounded text-sm"
+                  className="w-full flex-1 p-2 border rounded text-sm"
                 />
-                <button onClick={addLumpsum} className="px-3 py-2 bg-blue-600 text-white rounded text-sm inline-flex items-center gap-2">
+                <button
+                  onClick={addLumpsum}
+                  className="w-full sm:w-auto px-3 py-2 bg-blue-600 text-white rounded text-sm inline-flex items-center justify-center sm:justify-start gap-2"
+                >
                   <Plus size={14} /> Add
                 </button>
               </div>
@@ -399,18 +405,24 @@ export default function AvalancheLoanCalculator() {
               {lumps.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {lumps.map((lp) => (
-                    <div key={lp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <div
+                      key={lp.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gray-50 p-2 rounded gap-2 sm:gap-0"
+                    >
                       <div className="text-sm">
                         <div>
-                          <strong>{lp.monthLabel}</strong> — {currency(lp.amount)} {lp.note && <span className="text-xs text-gray-500">• {lp.note}</span>}
+                          <strong>{lp.monthLabel}</strong> — {currency(lp.amount)}{" "}
+                          {lp.note && (
+                            <span className="text-xs text-gray-500">• {lp.note}</span>
+                          )}
                         </div>
                       </div>
-                      <div>
+                      <div className="w-full sm:w-auto flex justify-end">
                         <button
                           onClick={() => removeLumpsum(lp.id)}
                           title="Remove lumpsum"
                           aria-label="Remove lumpsum"
-                          className="p-2 rounded bg-red-50 hover:bg-red-100 text-red-600 border"
+                          className="p-2 rounded bg-red-50 hover:bg-red-100 text-red-600 border w-full sm:w-auto"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -420,6 +432,7 @@ export default function AvalancheLoanCalculator() {
                 </div>
               )}
             </div>
+
 
             {error && <div className="col-span-2 mt-2 text-sm text-red-700 bg-red-50 p-2 rounded">{error}</div>}
           </div>
@@ -597,11 +610,11 @@ export default function AvalancheLoanCalculator() {
                           <td className="p-2 border" rowSpan={s.loans.length}>
                             {s.lumpsThisMonth && s.lumpsThisMonth.length
                               ? s.lumpsThisMonth.map((lp, i) => (
-                                  <div key={i} className="text-xs text-gray-600">
-                                    +{currency(lp.amount)} {lp.note && `• ${lp.note}`}
-                                    {lp.label ? ` (${lp.label})` : ''}
-                                  </div>
-                                ))
+                                <div key={i} className="text-xs text-gray-600">
+                                  +{currency(lp.amount)} {lp.note && `• ${lp.note}`}
+                                  {lp.label ? ` (${lp.label})` : ''}
+                                </div>
+                              ))
                               : '—'}
                           </td>
                           <td className="p-2 border" rowSpan={s.loans.length}>{currency(s.totalInterestThisMonth)}</td>
