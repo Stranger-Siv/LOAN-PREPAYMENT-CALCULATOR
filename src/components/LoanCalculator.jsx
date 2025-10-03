@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { ChartLine, Plus, Trash2, DownloadCloud } from 'lucide-react';
 import clsx from 'clsx';
 
-// AvalancheLoanCalculator.jsx
-// Updated: Adds Total outstanding to summary cards.
-
 export default function AvalancheLoanCalculator() {
   const [salary, setSalary] = useState(80000);
   const [extraIncome, setExtraIncome] = useState(10000);
@@ -53,14 +50,12 @@ export default function AvalancheLoanCalculator() {
     }
   }
 
-  // Avalanche simulator (surplus -> highest-rate loan; freed EMIs roll into surplus)
   function avalancheSimulator(payload) {
     const working = payload.loans.map(l => ({ ...l }));
     let baseSurplus = payload.salary + payload.extraIncome - payload.expenses - working.reduce((s, l) => s + l.emi, 0);
     if (isNaN(baseSurplus)) baseSurplus = 0;
     if (baseSurplus < 0) baseSurplus = 0;
 
-    // safety: EMI >= first-month interest
     for (const l of working) {
       const monthlyRate = l.annualRate / 12;
       const firstInterest = l.principal * monthlyRate;
@@ -75,11 +70,9 @@ export default function AvalancheLoanCalculator() {
     let totalPaid = 0;
     const start = new Date(); start.setDate(1);
 
-    // initial outstanding (sum of principals) — used if simulation ends immediately
     const initialOutstanding = working.reduce((s, l) => s + l.principal, 0);
 
     while (working.length > 0 && month <= payload.monthsLimit) {
-      // highest-rate-first
       working.sort((a, b) => b.annualRate - a.annualRate);
       let surplus = baseSurplus;
       const rowLoans = [];
@@ -120,11 +113,8 @@ export default function AvalancheLoanCalculator() {
       }
 
       const totalOutstanding = rowLoans.reduce((s, r) => s + r.balanceAfter, 0);
-
-      // freed EMIs added to baseSurplus for subsequent months
       const paidOff = working.filter(l => l.principal <= 1e-9);
       for (const p of paidOff) baseSurplus += p.emi;
-      // remove cleared loans
       for (let i = working.length - 1; i >= 0; i--) if (working[i].principal <= 1e-9) working.splice(i, 1);
 
       const date = new Date(start.getFullYear(), start.getMonth() + (month - 1), 1);
@@ -143,7 +133,6 @@ export default function AvalancheLoanCalculator() {
       month++;
     }
 
-    // determine final outstanding: if we have schedule rows use last row's totalOutstanding, otherwise initialOutstanding
     const finalOutstanding = rows.length ? rows[rows.length - 1].totalOutstanding : initialOutstanding;
 
     return {
@@ -158,7 +147,6 @@ export default function AvalancheLoanCalculator() {
     };
   }
 
-  // UI helpers
   function addLoan() { setLoans([...loans, { id: `L${loans.length + 1}`, name: `Loan ${loans.length + 1}`, principal: 0, emi: 0, annualRate: 0 }]); }
   function removeLoan(id) { setLoans(loans.filter(l => l.id !== id)); }
   function updateLoan(id, field, value) { setLoans(loans.map(l => l.id === id ? { ...l, [field]: value } : l)); }
@@ -187,83 +175,95 @@ export default function AvalancheLoanCalculator() {
         ].join(','));
       });
     });
-    const csv = lines.join('\n');
+    const csv = lines.join('');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'avalanche_schedule.csv'; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = 'loan_prepayment_schedule.csv'; a.click(); URL.revokeObjectURL(url);
   }
 
-  // compute latest month for highlighting
   const latestMonth = schedule && schedule.length ? schedule[schedule.length - 1].month : null;
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">Avalanche Loan Prepayment</h1>
-        <p className="text-gray-500 mt-1">Put surplus toward the highest-rate loan; freed EMIs roll into the next loan.</p>
+    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+      <header className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Loan Prepayment</h1>
+        <p className="text-gray-500 mt-1 text-sm sm:text-base">Put surplus toward the highest-rate loan; freed EMIs roll into the next loan.</p>
       </header>
 
-      {/* TOP: Monthly Finances (left) + Loans (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* top panels side-by-side on md+, stacked on small */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         {/* Monthly Finances */}
-        <section className="bg-white p-4 rounded-lg shadow-sm border">
-          <h2 className="font-semibold mb-3">Monthly Finances</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <section className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
+          <h2 className="font-semibold mb-2 text-sm sm:text-base">Monthly Finances</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div>
-              <label className="block text-sm text-gray-600">Salary (take-home)</label>
-              <input value={salary} onChange={e => setSalary(Number(e.target.value))} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-200" />
+              <label className="block text-xs sm:text-sm text-gray-600">Salary (take-home)</label>
+              <input value={salary} onChange={e => setSalary(Number(e.target.value))} className="w-full p-2 sm:p-3 border rounded focus:ring-2 focus:ring-indigo-200 text-sm" />
             </div>
             <div>
-              <label className="block text-sm text-gray-600">Extra income</label>
-              <input value={extraIncome} onChange={e => setExtraIncome(Number(e.target.value))} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-200" />
+              <label className="block text-xs sm:text-sm text-gray-600">Extra income</label>
+              <input value={extraIncome} onChange={e => setExtraIncome(Number(e.target.value))} className="w-full p-2 sm:p-3 border rounded focus:ring-2 focus:ring-indigo-200 text-sm" />
             </div>
             <div>
-              <label className="block text-sm text-gray-600">Expenses</label>
-              <input value={expenses} onChange={e => setExpenses(Number(e.target.value))} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-200" />
+              <label className="block text-xs sm:text-sm text-gray-600">Expenses</label>
+              <input value={expenses} onChange={e => setExpenses(Number(e.target.value))} className="w-full p-2 sm:p-3 border rounded focus:ring-2 focus:ring-indigo-200 text-sm" />
             </div>
             <div>
-              <label className="block text-sm text-gray-600">Months cap</label>
-              <input value={monthsLimit} onChange={e => setMonthsLimit(Number(e.target.value))} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-200" />
+              <label className="block text-xs sm:text-sm text-gray-600">Months cap</label>
+              <input value={monthsLimit} onChange={e => setMonthsLimit(Number(e.target.value))} className="w-full p-2 sm:p-3 border rounded focus:ring-2 focus:ring-indigo-200 text-sm" />
             </div>
             {error && <div className="col-span-2 mt-2 text-sm text-red-700 bg-red-50 p-2 rounded">{error}</div>}
           </div>
         </section>
 
-        {/* Loans */}
-        <section className="bg-white p-4 rounded-lg shadow-sm border">
-          <h2 className="font-semibold mb-3">Loans</h2>
+        {/* Loans: mobile = stacked cards; md+ = compact grid rows */}
+        <section className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
+          <h2 className="font-semibold mb-2 text-sm sm:text-base">Loans</h2>
+
           <div className="space-y-3">
-            {loans.map((l) => (
-              <div key={l.id} className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-1">
-                  <label className="text-sm text-gray-600">ID</label>
-                  <input className="p-2 border rounded w-full" value={l.id} onChange={e => updateLoan(l.id, 'id', e.target.value)} />
-                </div>
-                <div className="col-span-3">
-                  <label className="text-sm text-gray-600">Name</label>
-                  <input className="p-2 border rounded w-full" value={l.name} onChange={e => updateLoan(l.id, 'name', e.target.value)} />
-                </div>
-                <div className="col-span-3">
-                  <label className="text-sm text-gray-600">Principal</label>
-                  <input type="number" className="p-2 border rounded w-full" value={l.principal} onChange={e => updateLoan(l.id, 'principal', Number(e.target.value))} />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm text-gray-600">EMI</label>
-                  <input type="number" className="p-2 border rounded w-full" value={l.emi} onChange={e => updateLoan(l.id, 'emi', Number(e.target.value))} />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm text-gray-600">Rate %</label>
-                  <input type="number" className="p-2 border rounded w-full" value={(l.annualRate * 100).toFixed(2)} onChange={e => updateLoan(l.id, 'annualRate', Number(e.target.value) / 100)} />
-                </div>
-                <div className="col-span-1 text-right">
-                  <button title="Remove" onClick={() => removeLoan(l.id)} className="p-2 rounded bg-red-50 hover:bg-red-100 text-red-600 border">
-                    <Trash2 size={16} />
-                  </button>
+            {loans.map((l, idx) => (
+              <div key={l.id} className="border rounded p-3 sm:p-2 bg-white shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium">{l.id}</div>
+                        <div className="text-xs text-gray-500 hidden sm:block">{l.name}</div>
+                      </div>
+                      <div className="sm:hidden text-xs text-gray-500">{l.name}</div>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-6 gap-2">
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs text-gray-600">Name</label>
+                        <input value={l.name} onChange={e => updateLoan(l.id, 'name', e.target.value)} className="w-full p-2 border rounded text-sm" />
+                      </div>
+                      <div className="sm:col-span-3">
+                        <label className="block text-xs text-gray-600">Principal</label>
+                        <input type="number" value={l.principal} onChange={e => updateLoan(l.id, 'principal', Number(e.target.value))} className="w-full p-2 border rounded text-sm" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-gray-600">EMI</label>
+                        <input type="number" value={l.emi} onChange={e => updateLoan(l.id, 'emi', Number(e.target.value))} className="w-full p-2 border rounded text-sm" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-gray-600">Rate %</label>
+                        <input type="number" value={(l.annualRate * 100).toFixed(2)} onChange={e => updateLoan(l.id, 'annualRate', Number(e.target.value) / 100)} className="w-full p-2 border rounded text-sm" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ml-3 flex-shrink-0 mt-1 sm:mt-0">
+                    <button onClick={() => removeLoan(l.id)} className="p-2 rounded bg-red-50 hover:bg-red-100 text-red-600 border w-12 h-10">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
-            <div className="pt-2">
-              <button onClick={addLoan} className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
+
+            <div>
+              <button onClick={addLoan} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
                 <Plus size={14} /> Add loan
               </button>
             </div>
@@ -271,45 +271,52 @@ export default function AvalancheLoanCalculator() {
         </section>
       </div>
 
-      {/* ACTIONS + SUMMARY */}
-      <div className="mb-6 grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-        <div className="lg:col-span-1 flex gap-3">
-          <button title="Download CSV" onClick={downloadCSV} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow">
+      {/* ACTIONS + SUMMARY: buttons stack on small, cards wrap */}
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
+        <div className="sm:col-span-1">
+          <button onClick={downloadCSV} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded shadow text-sm">
             <DownloadCloud size={16} /> Export CSV
           </button>
-          <button onClick={runAvalanche} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded shadow">
+        </div>
+        <div className="sm:col-span-1">
+          <button onClick={runAvalanche} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded shadow text-sm">
             <ChartLine size={16} /> Run Simulation
           </button>
         </div>
 
-        <div className="lg:col-span-3 grid grid-cols-3 gap-4">
+        <div className="sm:col-span-2 lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
           {summary ? (
             <>
-              <div className="p-4 bg-white rounded shadow border">
-                <div className="text-sm text-gray-500">Months to payoff</div>
-                <div className="text-2xl font-bold">{summary.totalMonths}</div>
+              <div className="p-3 bg-white rounded shadow border text-center">
+                <div className="text-xs text-gray-500">Months to payoff</div>
+                <div className="text-lg font-bold">{summary.totalMonths}</div>
               </div>
-              <div className="p-4 bg-white rounded shadow border">
-                <div className="text-sm text-gray-500">Total interest</div>
-                <div className="text-2xl font-bold">{currency(summary.totalInterestPaid)}</div>
+              <div className="p-3 bg-white rounded shadow border text-center">
+                <div className="text-xs text-gray-500">Total interest</div>
+                <div className="text-lg font-bold">{currency(summary.totalInterestPaid)}</div>
               </div>
-              <div className="p-4 bg-white rounded shadow border">
-                <div className="text-sm text-gray-500">Total paid</div>
-                <div className="text-2xl font-bold">{currency(summary.totalPaid)}</div>
+              <div className="p-3 bg-white rounded shadow border text-center">
+                <div className="text-xs text-gray-500">Total paid</div>
+                <div className="text-lg font-bold">{currency(summary.totalPaid)}</div>
               </div>
-              
+              <div className="p-3 bg-white rounded shadow border text-center">
+                <div className="text-xs text-gray-500">Total outstanding</div>
+                <div className="text-lg font-bold">{currency(summary.totalOutstanding)}</div>
+              </div>
             </>
           ) : (
-            <div className="col-span-4 p-4 bg-white rounded shadow border text-center text-gray-600">Run the simulation to see results.</div>
+            <div className="col-span-4 p-3 bg-white rounded shadow border text-center text-gray-600">Run the simulation to see results.</div>
           )}
         </div>
       </div>
 
-      {/* SCHEDULE */}
+      {/* SCHEDULE: table for md+, mobile cards for small */}
       {schedule && (
-        <section className="bg-white rounded shadow border p-4">
-          <h3 className="font-semibold mb-2">Monthly schedule</h3>
-          <div className="overflow-auto max-h-[520px]">
+        <section className="bg-white rounded shadow border p-3 sm:p-4">
+          <h3 className="font-semibold mb-2 text-sm sm:text-base">Monthly schedule</h3>
+
+          {/* Desktop / tablet table */}
+          <div className="hidden md:block overflow-auto max-h-[520px]">
             <table className="w-full text-sm table-auto border-collapse">
               <thead>
                 <tr className="bg-gray-50 sticky top-0">
@@ -331,10 +338,7 @@ export default function AvalancheLoanCalculator() {
                     <tr key={`${s.month}-${ln.id}`} className={clsx(
                       idx === 0 ? (s.month === latestMonth ? 'bg-indigo-50 ring-2 ring-indigo-200' : 'bg-white') : 'bg-gray-50'
                     )}>
-                      <td className="p-2 border">
-                        {s.month}
-                        {s.month === latestMonth && <span className="ml-2 text-xs text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">Latest</span>}
-                      </td>
+                      <td className="p-2 border">{s.month}{s.month === latestMonth && <span className="ml-2 text-xs text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">Latest</span>}</td>
                       <td className="p-2 border">{s.date}</td>
                       {idx === 0 ? (
                         <>
@@ -356,10 +360,43 @@ export default function AvalancheLoanCalculator() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile monthly cards */}
+          <div className="md:hidden space-y-3">
+            {schedule.map(s => (
+              <div key={s.month} className={clsx('border rounded p-3', s.month === latestMonth ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'bg-white')}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold">Month {s.month} <span className="text-xs text-gray-500">({s.date})</span></div>
+                    <div className="text-xs text-gray-500">Surplus: ₹{s.surplusBefore.toLocaleString()}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">Outstanding</div>
+                    <div className="font-semibold">₹{s.totalOutstanding.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {s.loans.map(ln => (
+                    <div key={ln.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <div>
+                        <div className="text-sm font-medium">{ln.id} — {ln.name}</div>
+                        <div className="text-xs text-gray-500">Rate: {(ln.rate*100).toFixed(2)}% • Balance: ₹{ln.balanceAfter.toLocaleString()}</div>
+                      </div>
+                      <div className="text-right text-xs">
+                        <div>Paid: ₹{(ln.principalPaid + ln.interest).toLocaleString()}</div>
+                        <div className="text-gray-500">EMI ₹{ln.emi.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
-      <footer className="mt-6 text-xs text-gray-500">Assumes monthly compounding and no prepayment penalties. This tool is a calculator, not financial advice.</footer>
+      <footer className="mt-4 text-xs text-gray-500">Assumes monthly compounding and no prepayment penalties. This tool is a calculator, not financial advice.</footer>
     </div>
   );
 }
