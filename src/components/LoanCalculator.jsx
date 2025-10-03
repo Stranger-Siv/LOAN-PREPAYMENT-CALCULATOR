@@ -308,7 +308,7 @@ export default function AvalancheLoanCalculator() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <section className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-          <h2 className="font-semibold mb-2 text-sm sm:text-base">Monthly Finances & Lumpsums</h2>
+          <h2 className="font-bold mb-2 text-sm sm:text-base">Monthly Finances & Lumpsums</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div>
               <label className="block text-xs sm:text-sm text-gray-600">Salary (take-home)</label>
@@ -368,7 +368,7 @@ export default function AvalancheLoanCalculator() {
             </div>
 
             <div className="sm:col-span-2 mt-2">
-              <h3 className="text-sm font-medium mb-2">
+              <h3 className="text-sm font-bold mb-2">
                 Schedule one-time lumpsum payment (calendar month)
               </h3>
 
@@ -439,7 +439,7 @@ export default function AvalancheLoanCalculator() {
         </section>
 
         <section className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-          <h2 className="font-semibold mb-2 text-sm sm:text-base">Loans</h2>
+          <h2 className="font-bold mb-2 text-sm sm:text-base">Loans</h2>
           <div className="space-y-3">
             {loans.map((l, idx) => (
               <div key={l.id} className="border rounded p-3 sm:p-2 bg-white shadow-sm">
