@@ -254,7 +254,7 @@ export default function AvalancheLoanCalculator() {
                   </div>
 
                   <div className="ml-3 flex-shrink-0 mt-1 sm:mt-0">
-                    <button onClick={() => removeLoan(l.id)} className="p-2 rounded bg-red-50 hover:bg-red-100 text-red-600 border w-12 h-10">
+                    <button onClick={() => removeLoan(l.id)} className="p-2 rounded pl-[15px] bg-red-50 hover:bg-red-100 text-red-600 border w-12 h-10">
                       <Trash2 size={16} />
                     </button>
                   </div>
